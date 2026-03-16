@@ -3,9 +3,10 @@ main.py
 CLI entry point for the social media management system.
 
 Commands:
-    python main.py run     — prompt for a goal, run the full orchestration pipeline
-    python main.py review  — interactively approve / reject queued posts
-    python main.py post    — publish all approved posts to their platforms
+    python main.py run       — prompt for a goal, run the full orchestration pipeline
+    python main.py review    — interactively approve / reject queued posts (CLI)
+    python main.py post      — publish all approved posts to their platforms
+    python main.py dashboard — launch the web approval dashboard (http://localhost:5000)
 """
 
 import sys
@@ -160,13 +161,25 @@ def _resolve_video_path(platform: str) -> str | None:
     return None
 
 
+def cmd_dashboard() -> None:
+    """Launch the Flask web dashboard for post approval."""
+    import os
+    from dashboard import app
+
+    port = int(os.environ.get("DASHBOARD_PORT", 5000))
+    print(f"\n[Dashboard] Starting on http://localhost:{port}")
+    print("[Dashboard] Press Ctrl+C to stop.\n")
+    app.run(debug=True, port=port)
+
+
 def print_usage() -> None:
     print(
         "\nUsage: python main.py <command>\n"
         "\nCommands:\n"
-        "  run     Prompt for a content goal and run the full agent pipeline\n"
-        "  review  Interactively review the approval queue\n"
-        "  post    Publish all approved posts to their platforms\n"
+        "  run        Prompt for a content goal and run the full agent pipeline\n"
+        "  review     Interactively review the approval queue (CLI)\n"
+        "  post       Publish all approved posts to their platforms\n"
+        "  dashboard  Launch the web approval dashboard at http://localhost:5000\n"
     )
 
 
@@ -183,6 +196,8 @@ def main() -> None:
         cmd_review()
     elif command == "post":
         cmd_post()
+    elif command == "dashboard":
+        cmd_dashboard()
     else:
         print(f"ERROR: Unknown command '{command}'")
         print_usage()

@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-gray-950">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Social Media Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #111827; }
+    ::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #4B5563; }
+
+    /* Smooth card transitions */
+    .post-card { transition: opacity 0.25s ease, transform 0.25s ease; }
+    .post-card.fading { opacity: 0; transform: scale(0.97); }
+
+    /* Textarea auto-resize */
+    textarea { resize: vertical; min-height: 80px; }
+
+    /* Toast animation */
+    @keyframes slideIn {
+      from { transform: translateX(120%); opacity: 0; }
+      to   { transform: translateX(0);   opacity: 1; }
+    }
+    @keyframes slideOut {
+      from { transform: translateX(0);   opacity: 1; }
+      to   { transform: translateX(120%); opacity: 0; }
+    }
+    .toast-enter { animation: slideIn 0.3s ease forwards; }
+    .toast-leave { animation: slideOut 0.3s ease forwards; }
+  </style>
+</head>
+<body class="h-full text-gray-100 font-sans">
+
+<!-- ═══════════════════════ HEADER ═══════════════════════ -->
+<header class="sticky top-0 z-40 bg-gray-900 border-b border-gray-800 shadow-lg">
+  <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4 flex-wrap">
+
+    <!-- Logo + title -->
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-pink-500
+                  flex items-center justify-center shadow">
+        <i class="fa-solid fa-rocket text-white text-sm"></i>
+      </div>
+      <div>
+        <h1 class="text-lg font-bold leading-none text-white">Social Media Agents</h1>
+        <p class="text-xs text-gray-400 leading-none mt-0.5">Post Approval Dashboard</p>
+      </div>
+    </div>
+
+    <!-- Stat pills -->
+    <div id="stat-bar" class="flex items-center gap-2 flex-wrap text-xs font-semibold">
+      <!-- Populated by JS -->
+    </div>
+
+    <!-- Refresh button -->
+    <button onclick="loadPosts()"
+            class="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-800
+                   hover:bg-gray-700 text-gray-300 text-sm transition-colors">
+      <i class="fa-solid fa-arrows-rotate" id="refresh-icon"></i>
+      Refresh
+    </button>
+  </div>
+</header>
+
+<!-- ═══════════════════════ FILTER TABS ═══════════════════ -->
+<div class="max-w-7xl mx-auto px-4 pt-5">
+  <div class="flex gap-1 bg-gray-900 rounded-xl p-1 w-fit">
+    <button class="filter-tab active" data-filter="all">All</button>
+    <button class="filter-tab" data-filter="pending">
+      <i class="fa-regular fa-clock mr-1"></i>Pending
+    </button>
+    <button class="filter-tab" data-filter="approved">
+      <i class="fa-solid fa-circle-check mr-1"></i>Approved
+    </button>
+    <button class="filter-tab" data-filter="rejected">
+      <i class="fa-solid fa-circle-xmark mr-1"></i>Rejected
+    </button>
+    <button class="filter-tab" data-filter="published">
+      <i class="fa-solid fa-paper-plane mr-1"></i>Published
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════════ MAIN GRID ═══════════════════════ -->
+<main class="max-w-7xl mx-auto px-4 py-6">
+  <!-- Empty state -->
+  <div id="empty-state" class="hidden flex-col items-center justify-center py-24 text-center">
+    <div class="w-20 h-20 rounded-2xl bg-gray-800 flex items-center justify-center mb-4">
+      <i class="fa-solid fa-inbox text-3xl text-gray-600"></i>
+    </div>
+    <p class="text-gray-400 font-medium">No posts here yet</p>
+    <p class="text-gray-600 text-sm mt-1">
+      Run <code class="bg-gray-800 px-1 rounded text-gray-300">python main.py run</code>
+      to generate content.
+    </p>
+  </div>
+
+  <!-- Post grid -->
+  <div id="post-grid" class="grid gap-5 grid-cols-1 md:grid-cols-2 xl:grid-cols-3"></div>
+</main>
+
+<!-- ═══════════════════════ REJECT MODAL ═══════════════════ -->
+<div id="reject-modal"
+     class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+  <div class="bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
+    <h2 class="text-lg font-bold mb-1">Reject Post</h2>
+    <p class="text-sm text-gray-400 mb-4">Optionally explain why this post was rejected.</p>
+    <textarea id="reject-reason"
+              class="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2
+                     text-sm text-gray-100 focus:outline-none focus:ring-2 focus:ring-red-500"
+              placeholder="Reason (optional)..." rows="3"></textarea>
+    <div class="flex gap-3 mt-4 justify-end">
+      <button onclick="closeRejectModal()"
+              class="px-4 py-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-sm transition-colors">
+        Cancel
+      </button>
+      <button onclick="confirmReject()"
+              class="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-sm font-semibold transition-colors">
+        <i class="fa-solid fa-circle-xmark mr-1"></i>Reject
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ EDIT MODAL ════════════════════= -->
+<div id="edit-modal"
+     class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+  <div class="bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl w-full max-w-lg mx-4 p-6">
+    <h2 class="text-lg font-bold mb-4">Edit Post</h2>
+
+    <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
+      Caption
+    </label>
+    <textarea id="edit-caption"
+              class="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2
+                     text-sm text-gray-100 focus:outline-none focus:ring-2 focus:ring-violet-500 mb-4"
+              rows="5"></textarea>
+
+    <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
+      Hashtags <span class="text-gray-600 normal-case font-normal">(comma-separated, # optional)</span>
+    </label>
+    <input id="edit-hashtags" type="text"
+           class="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2
+                  text-sm text-gray-100 focus:outline-none focus:ring-2 focus:ring-violet-500 mb-4"
+           placeholder="travel, nature, instagood" />
+
+    <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
+      Best Time to Post
+    </label>
+    <input id="edit-time" type="time"
+           class="bg-gray-800 border border-gray-700 rounded-xl px-3 py-2
+                  text-sm text-gray-100 focus:outline-none focus:ring-2 focus:ring-violet-500 mb-6" />
+
+    <div class="flex gap-3 justify-end">
+      <button onclick="closeEditModal()"
+              class="px-4 py-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-sm transition-colors">
+        Cancel
+      </button>
+      <button onclick="confirmEdit()"
+              class="px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-500
+                     text-sm font-semibold transition-colors">
+        <i class="fa-solid fa-floppy-disk mr-1"></i>Save Changes
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ TOAST CONTAINER ═════════════════ -->
+<div id="toast-container"
+     class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 items-end pointer-events-none"></div>
+
+<!-- ═══════════════════════ SCRIPT ══════════════════════════ -->
+<script>
+// ─── State ───────────────────────────────────────────────────────────────────
+let allPosts = [];
+let activeFilter = 'all';
+let rejectTargetIdx = null;
+let editTargetIdx   = null;
+
+// ─── Platform config ─────────────────────────────────────────────────────────
+const PLATFORM = {
+  instagram: {
+    icon: 'fa-brands fa-instagram',
+    gradient: 'from-purple-500 via-pink-500 to-orange-400',
+    label: 'Instagram',
+  },
+  facebook: {
+    icon: 'fa-brands fa-facebook',
+    gradient: 'from-blue-600 to-blue-400',
+    label: 'Facebook',
+  },
+  tiktok: {
+    icon: 'fa-brands fa-tiktok',
+    gradient: 'from-gray-900 via-pink-500 to-cyan-400',
+    label: 'TikTok',
+  },
+};
+
+const STATUS_BADGE = {
+  pending:   'bg-yellow-900/60 text-yellow-300 border border-yellow-700',
+  approved:  'bg-green-900/60  text-green-300  border border-green-700',
+  rejected:  'bg-red-900/60    text-red-300    border border-red-700',
+  published: 'bg-blue-900/60   text-blue-300   border border-blue-700',
+};
+
+const STATUS_ICON = {
+  pending:   'fa-regular fa-clock',
+  approved:  'fa-solid fa-circle-check',
+  rejected:  'fa-solid fa-circle-xmark',
+  published: 'fa-solid fa-paper-plane',
+};
+
+// ─── Data fetching ────────────────────────────────────────────────────────────
+async function loadPosts() {
+  const icon = document.getElementById('refresh-icon');
+  icon.classList.add('animate-spin');
+  try {
+    const res  = await fetch('/api/posts');
+    const data = await res.json();
+    allPosts = data.posts;
+    renderStats(data.stats);
+    renderGrid();
+  } catch (e) {
+    toast('Failed to load posts', 'error');
+  } finally {
+    icon.classList.remove('animate-spin');
+  }
+}
+
+// ─── Stats bar ────────────────────────────────────────────────────────────────
+function renderStats(stats) {
+  const bar = document.getElementById('stat-bar');
+  const pills = [
+    { key: 'total',     label: 'Total',     color: 'bg-gray-700 text-gray-200' },
+    { key: 'pending',   label: 'Pending',   color: 'bg-yellow-900 text-yellow-300' },
+    { key: 'approved',  label: 'Approved',  color: 'bg-green-900  text-green-300'  },
+    { key: 'rejected',  label: 'Rejected',  color: 'bg-red-900    text-red-300'    },
+    { key: 'published', label: 'Published', color: 'bg-blue-900   text-blue-300'   },
+  ];
+  bar.innerHTML = pills.map(p =>
+    `<span class="px-2.5 py-1 rounded-full ${p.color}">
+      ${stats[p.key]} ${p.label}
+    </span>`
+  ).join('');
+}
+
+// ─── Filter tabs ──────────────────────────────────────────────────────────────
+document.querySelectorAll('.filter-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeFilter = btn.dataset.filter;
+    renderGrid();
+  });
+});
+
+// ─── Grid renderer ────────────────────────────────────────────────────────────
+function renderGrid() {
+  const grid  = document.getElementById('post-grid');
+  const empty = document.getElementById('empty-state');
+
+  const filtered = activeFilter === 'all'
+    ? allPosts
+    : allPosts.filter(p => p.status === activeFilter);
+
+  if (filtered.length === 0) {
+    grid.innerHTML  = '';
+    empty.classList.remove('hidden');
+    empty.classList.add('flex');
+    return;
+  }
+
+  empty.classList.add('hidden');
+  empty.classList.remove('flex');
+  grid.innerHTML = filtered.map(p => buildCard(p)).join('');
+}
+
+function buildCard(post) {
+  const idx      = post._index;
+  const platform = PLATFORM[post.platform] || {
+    icon: 'fa-solid fa-globe',
+    gradient: 'from-gray-600 to-gray-400',
+    label: post.platform,
+  };
+  const status    = post.status || 'pending';
+  const badge     = STATUS_BADGE[status] || 'bg-gray-700 text-gray-300';
+  const statusIcon= STATUS_ICON[status]  || 'fa-solid fa-question';
+  const hashtags  = (post.hashtags || []).map(h => `#${h}`).join(' ');
+  const caption   = escapeHtml(post.caption || '');
+  const visual    = escapeHtml(post.suggested_visual || '—');
+  const time      = post.best_time_to_post || '—';
+  const queuedAt  = post.queued_at ? new Date(post.queued_at).toLocaleString() : '';
+  const editedAt  = post.edited_at ? `<span class="text-violet-400">• edited</span>` : '';
+
+  // Action buttons vary by status
+  let actions = '';
+  if (status === 'pending') {
+    actions = `
+      <button onclick="editPost(${idx})"
+              class="action-btn bg-gray-700 hover:bg-gray-600 text-gray-200">
+        <i class="fa-solid fa-pen-to-square mr-1"></i>Edit
+      </button>
+      <button onclick="approvePost(${idx})"
+              class="action-btn bg-green-700 hover:bg-green-600 text-white">
+        <i class="fa-solid fa-check mr-1"></i>Approve
+      </button>
+      <button onclick="openRejectModal(${idx})"
+              class="action-btn bg-red-700 hover:bg-red-600 text-white">
+        <i class="fa-solid fa-xmark mr-1"></i>Reject
+      </button>`;
+  } else if (status === 'approved') {
+    actions = `
+      <button onclick="editPost(${idx})"
+              class="action-btn bg-gray-700 hover:bg-gray-600 text-gray-200">
+        <i class="fa-solid fa-pen-to-square mr-1"></i>Edit
+      </button>
+      <button onclick="resetPost(${idx})"
+              class="action-btn bg-yellow-700 hover:bg-yellow-600 text-white">
+        <i class="fa-solid fa-rotate-left mr-1"></i>Undo
+      </button>`;
+  } else if (status === 'rejected') {
+    actions = `
+      <button onclick="resetPost(${idx})"
+              class="action-btn bg-yellow-700 hover:bg-yellow-600 text-white">
+        <i class="fa-solid fa-rotate-left mr-1"></i>Restore
+      </button>
+      <button onclick="deletePost(${idx})"
+              class="action-btn bg-gray-700 hover:bg-red-800 text-gray-300">
+        <i class="fa-solid fa-trash mr-1"></i>Delete
+      </button>`;
+  } else if (status === 'published') {
+    actions = `
+      <span class="text-xs text-blue-400 flex items-center gap-1">
+        <i class="fa-solid fa-circle-check"></i> Published
+        ${post.published_at ? '· ' + new Date(post.published_at).toLocaleString() : ''}
+      </span>`;
+  }
+
+  const rejectionNote = post.rejection_reason
+    ? `<div class="mt-3 px-3 py-2 bg-red-950/50 border border-red-800 rounded-lg text-xs text-red-300">
+         <i class="fa-solid fa-triangle-exclamation mr-1"></i>
+         <strong>Reason:</strong> ${escapeHtml(post.rejection_reason)}
+       </div>`
+    : '';
+
+  return `
+  <article id="card-${idx}"
+           class="post-card bg-gray-900 border border-gray-800 rounded-2xl
+                  overflow-hidden flex flex-col shadow-lg hover:border-gray-700 transition-colors">
+
+    <!-- Platform header -->
+    <div class="bg-gradient-to-r ${platform.gradient} p-4 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <i class="${platform.icon} text-white text-lg drop-shadow"></i>
+        <span class="font-bold text-white text-sm drop-shadow">${platform.label}</span>
+      </div>
+      <span class="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full
+                   ${badge} backdrop-blur-sm">
+        <i class="${statusIcon} text-[10px]"></i>
+        ${status.charAt(0).toUpperCase() + status.slice(1)}
+      </span>
+    </div>
+
+    <!-- Body -->
+    <div class="flex-1 p-4 flex flex-col gap-3">
+
+      <!-- Caption -->
+      <div>
+        <p class="text-xs text-gray-500 uppercase font-semibold tracking-wide mb-1">Caption</p>
+        <p class="text-sm text-gray-200 leading-relaxed whitespace-pre-wrap line-clamp-6">${caption}</p>
+      </div>
+
+      <!-- Hashtags -->
+      ${hashtags ? `
+      <div>
+        <p class="text-xs text-gray-500 uppercase font-semibold tracking-wide mb-1">Hashtags</p>
+        <p class="text-xs text-violet-400 leading-relaxed">${escapeHtml(hashtags)}</p>
+      </div>` : ''}
+
+      <!-- Visual suggestion -->
+      <div class="flex gap-2 items-start text-xs text-gray-500 bg-gray-800/60 rounded-lg px-3 py-2">
+        <i class="fa-solid fa-image mt-0.5 text-gray-600 shrink-0"></i>
+        <span>${visual}</span>
+      </div>
+
+      <!-- Time + meta row -->
+      <div class="flex items-center gap-3 text-xs text-gray-600 flex-wrap">
+        <span class="flex items-center gap-1">
+          <i class="fa-regular fa-clock"></i> Best time: <strong class="text-gray-400">${time}</strong>
+        </span>
+        ${queuedAt ? `<span>Queued: ${queuedAt}</span>` : ''}
+        ${editedAt}
+      </div>
+
+      ${rejectionNote}
+    </div>
+
+    <!-- Action footer -->
+    <div class="px-4 pb-4 flex items-center gap-2 flex-wrap">
+      ${actions}
+    </div>
+
+  </article>`;
+}
+
+// ─── Actions ─────────────────────────────────────────────────────────────────
+async function approvePost(idx) {
+  const card = document.getElementById(`card-${idx}`);
+  card?.classList.add('fading');
+  try {
+    const res  = await fetch(`/api/posts/${idx}/approve`, { method: 'POST' });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    toast('Post approved ✓', 'success');
+    // Update allPosts and re-render
+    const pi = allPosts.findIndex(p => p._index === idx);
+    if (pi !== -1) allPosts[pi].status = 'approved';
+    renderStats(data.stats);
+    renderGrid();
+  } catch (e) {
+    card?.classList.remove('fading');
+    toast('Failed to approve post', 'error');
+  }
+}
+
+async function resetPost(idx) {
+  try {
+    const res  = await fetch(`/api/posts/${idx}/reset`, { method: 'POST' });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    toast('Post reset to pending', 'info');
+    const pi = allPosts.findIndex(p => p._index === idx);
+    if (pi !== -1) { allPosts[pi].status = 'pending'; delete allPosts[pi].reviewed_at; }
+    renderStats(data.stats);
+    renderGrid();
+  } catch (e) {
+    toast('Failed to reset post', 'error');
+  }
+}
+
+async function deletePost(idx) {
+  if (!confirm('Permanently delete this post?')) return;
+  const card = document.getElementById(`card-${idx}`);
+  card?.classList.add('fading');
+  try {
+    const res  = await fetch(`/api/posts/${idx}/delete`, { method: 'POST' });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    toast('Post deleted', 'info');
+    await loadPosts();
+  } catch (e) {
+    card?.classList.remove('fading');
+    toast('Failed to delete post', 'error');
+  }
+}
+
+// ─── Reject modal ─────────────────────────────────────────────────────────────
+function openRejectModal(idx) {
+  rejectTargetIdx = idx;
+  document.getElementById('reject-reason').value = '';
+  document.getElementById('reject-modal').classList.remove('hidden');
+  document.getElementById('reject-reason').focus();
+}
+
+function closeRejectModal() {
+  document.getElementById('reject-modal').classList.add('hidden');
+  rejectTargetIdx = null;
+}
+
+async function confirmReject() {
+  const reason = document.getElementById('reject-reason').value.trim();
+  const idx    = rejectTargetIdx;
+  closeRejectModal();
+
+  const card = document.getElementById(`card-${idx}`);
+  card?.classList.add('fading');
+
+  try {
+    const res  = await fetch(`/api/posts/${idx}/reject`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason }),
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    toast('Post rejected', 'warning');
+    const pi = allPosts.findIndex(p => p._index === idx);
+    if (pi !== -1) {
+      allPosts[pi].status = 'rejected';
+      if (reason) allPosts[pi].rejection_reason = reason;
+    }
+    renderStats(data.stats);
+    renderGrid();
+  } catch (e) {
+    card?.classList.remove('fading');
+    toast('Failed to reject post', 'error');
+  }
+}
+
+// ─── Edit modal ───────────────────────────────────────────────────────────────
+function editPost(idx) {
+  editTargetIdx = idx;
+  const post = allPosts.find(p => p._index === idx);
+  if (!post) return;
+
+  document.getElementById('edit-caption').value  = post.caption || '';
+  document.getElementById('edit-hashtags').value  = (post.hashtags || []).join(', ');
+  document.getElementById('edit-time').value      = post.best_time_to_post || '09:00';
+  document.getElementById('edit-modal').classList.remove('hidden');
+  document.getElementById('edit-caption').focus();
+}
+
+function closeEditModal() {
+  document.getElementById('edit-modal').classList.add('hidden');
+  editTargetIdx = null;
+}
+
+async function confirmEdit() {
+  const idx      = editTargetIdx;
+  const caption  = document.getElementById('edit-caption').value;
+  const rawTags  = document.getElementById('edit-hashtags').value;
+  const time     = document.getElementById('edit-time').value;
+  const hashtags = rawTags.split(',').map(h => h.trim().replace(/^#/, '')).filter(Boolean);
+
+  closeEditModal();
+
+  try {
+    const res  = await fetch(`/api/posts/${idx}/edit`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ caption, hashtags, best_time_to_post: time }),
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    toast('Post updated ✓', 'success');
+    // Merge updated post back into allPosts
+    const pi = allPosts.findIndex(p => p._index === idx);
+    if (pi !== -1) allPosts[pi] = { _index: idx, ...data.post };
+    renderGrid();
+  } catch (e) {
+    toast('Failed to save changes', 'error');
+  }
+}
+
+// ─── Close modals on backdrop click ──────────────────────────────────────────
+document.getElementById('reject-modal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeRejectModal();
+});
+document.getElementById('edit-modal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeEditModal();
+});
+
+// ─── Keyboard shortcuts ───────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeRejectModal(); closeEditModal(); }
+});
+
+// ─── Toast notifications ──────────────────────────────────────────────────────
+function toast(msg, type = 'info') {
+  const colors = {
+    success: 'bg-green-800  border-green-600  text-green-100',
+    error:   'bg-red-900    border-red-600     text-red-100',
+    warning: 'bg-yellow-900 border-yellow-600  text-yellow-100',
+    info:    'bg-gray-800   border-gray-600    text-gray-100',
+  };
+  const icons = {
+    success: 'fa-circle-check',
+    error:   'fa-circle-exclamation',
+    warning: 'fa-triangle-exclamation',
+    info:    'fa-circle-info',
+  };
+
+  const el = document.createElement('div');
+  el.className = `pointer-events-auto flex items-center gap-2 px-4 py-3 rounded-xl border
+                  shadow-lg text-sm font-medium toast-enter ${colors[type] || colors.info}`;
+  el.innerHTML = `<i class="fa-solid ${icons[type] || icons.info}"></i> ${msg}`;
+
+  const container = document.getElementById('toast-container');
+  container.appendChild(el);
+
+  setTimeout(() => {
+    el.classList.remove('toast-enter');
+    el.classList.add('toast-leave');
+    setTimeout(() => el.remove(), 350);
+  }, 3000);
+}
+
+// ─── Tailwind filter-tab style injection ─────────────────────────────────────
+const style = document.createElement('style');
+style.textContent = `
+  .filter-tab {
+    padding: 0.375rem 0.875rem;
+    border-radius: 0.625rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: #9ca3af;
+    transition: all 0.15s ease;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .filter-tab:hover { background: #1f2937; color: #e5e7eb; }
+  .filter-tab.active { background: #4c1d95; color: #fff; }
+  .action-btn {
+    padding: 0.375rem 0.875rem;
+    border-radius: 0.625rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    transition: all 0.15s ease;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .line-clamp-6 {
+    display: -webkit-box;
+    -webkit-line-clamp: 6;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+`;
+document.head.appendChild(style);
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+loadPosts();
+// Auto-refresh every 30 seconds
+setInterval(loadPosts, 30_000);
+</script>
+</body>
+</html>
