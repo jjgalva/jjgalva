@@ -33,6 +33,9 @@ PLATFORMS = {
     },
 }
 
+# --- Meta Ads ---
+META_AD_ACCOUNT_ID = os.getenv("META_AD_ACCOUNT_ID", "")  # numeric, without "act_" prefix
+
 # --- Anthropic ---
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 CLAUDE_MODEL = "claude-sonnet-4-20250514"

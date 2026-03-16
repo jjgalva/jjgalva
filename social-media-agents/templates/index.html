@@ -32,6 +32,10 @@
     }
     .toast-enter { animation: slideIn 0.3s ease forwards; }
     .toast-leave { animation: slideOut 0.3s ease forwards; }
+
+    /* Campaign plan toggle */
+    .plan-details { display: none; }
+    .plan-details.open { display: block; }
   </style>
 </head>
 <body class="h-full text-gray-100 font-sans">
@@ -48,7 +52,7 @@
       </div>
       <div>
         <h1 class="text-lg font-bold leading-none text-white">Social Media Agents</h1>
-        <p class="text-xs text-gray-400 leading-none mt-0.5">Post Approval Dashboard</p>
+        <p class="text-xs text-gray-400 leading-none mt-0.5">Approval Dashboard</p>
       </div>
     </div>
 
@@ -58,53 +62,106 @@
     </div>
 
     <!-- Refresh button -->
-    <button onclick="loadPosts()"
+    <button onclick="loadAll()"
             class="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-800
                    hover:bg-gray-700 text-gray-300 text-sm transition-colors">
       <i class="fa-solid fa-arrows-rotate" id="refresh-icon"></i>
       Refresh
     </button>
   </div>
+
+  <!-- Section tabs -->
+  <div class="max-w-7xl mx-auto px-4 pb-0 flex gap-1 border-t border-gray-800 pt-2">
+    <button id="section-posts" onclick="switchSection('posts')"
+            class="section-tab active">
+      <i class="fa-solid fa-newspaper mr-1.5"></i>Posts
+    </button>
+    <button id="section-ads" onclick="switchSection('ads')"
+            class="section-tab">
+      <i class="fa-solid fa-bullhorn mr-1.5"></i>Ads
+    </button>
+  </div>
 </header>
 
-<!-- ═══════════════════════ FILTER TABS ═══════════════════ -->
-<div class="max-w-7xl mx-auto px-4 pt-5">
-  <div class="flex gap-1 bg-gray-900 rounded-xl p-1 w-fit">
-    <button class="filter-tab active" data-filter="all">All</button>
-    <button class="filter-tab" data-filter="pending">
-      <i class="fa-regular fa-clock mr-1"></i>Pending
-    </button>
-    <button class="filter-tab" data-filter="approved">
-      <i class="fa-solid fa-circle-check mr-1"></i>Approved
-    </button>
-    <button class="filter-tab" data-filter="rejected">
-      <i class="fa-solid fa-circle-xmark mr-1"></i>Rejected
-    </button>
-    <button class="filter-tab" data-filter="published">
-      <i class="fa-solid fa-paper-plane mr-1"></i>Published
-    </button>
-  </div>
-</div>
+<!-- ═══════════════════════ POSTS SECTION ══════════════════ -->
+<div id="section-posts-body">
 
-<!-- ═══════════════════════ MAIN GRID ═══════════════════════ -->
-<main class="max-w-7xl mx-auto px-4 py-6">
-  <!-- Empty state -->
-  <div id="empty-state" class="hidden flex-col items-center justify-center py-24 text-center">
-    <div class="w-20 h-20 rounded-2xl bg-gray-800 flex items-center justify-center mb-4">
-      <i class="fa-solid fa-inbox text-3xl text-gray-600"></i>
+  <!-- Filter tabs -->
+  <div class="max-w-7xl mx-auto px-4 pt-5">
+    <div class="flex gap-1 bg-gray-900 rounded-xl p-1 w-fit">
+      <button class="filter-tab active" data-filter="all">All</button>
+      <button class="filter-tab" data-filter="pending">
+        <i class="fa-regular fa-clock mr-1"></i>Pending
+      </button>
+      <button class="filter-tab" data-filter="approved">
+        <i class="fa-solid fa-circle-check mr-1"></i>Approved
+      </button>
+      <button class="filter-tab" data-filter="rejected">
+        <i class="fa-solid fa-circle-xmark mr-1"></i>Rejected
+      </button>
+      <button class="filter-tab" data-filter="published">
+        <i class="fa-solid fa-paper-plane mr-1"></i>Published
+      </button>
     </div>
-    <p class="text-gray-400 font-medium">No posts here yet</p>
-    <p class="text-gray-600 text-sm mt-1">
-      Run <code class="bg-gray-800 px-1 rounded text-gray-300">python main.py run</code>
-      to generate content.
-    </p>
   </div>
 
-  <!-- Post grid -->
-  <div id="post-grid" class="grid gap-5 grid-cols-1 md:grid-cols-2 xl:grid-cols-3"></div>
-</main>
+  <!-- Main grid -->
+  <main class="max-w-7xl mx-auto px-4 py-6">
+    <div id="empty-state" class="hidden flex-col items-center justify-center py-24 text-center">
+      <div class="w-20 h-20 rounded-2xl bg-gray-800 flex items-center justify-center mb-4">
+        <i class="fa-solid fa-inbox text-3xl text-gray-600"></i>
+      </div>
+      <p class="text-gray-400 font-medium">No posts here yet</p>
+      <p class="text-gray-600 text-sm mt-1">
+        Run <code class="bg-gray-800 px-1 rounded text-gray-300">python main.py run</code>
+        to generate content.
+      </p>
+    </div>
+    <div id="post-grid" class="grid gap-5 grid-cols-1 md:grid-cols-2 xl:grid-cols-3"></div>
+  </main>
 
-<!-- ═══════════════════════ REJECT MODAL ═══════════════════ -->
+</div><!-- /section-posts-body -->
+
+<!-- ═══════════════════════ ADS SECTION ════════════════════ -->
+<div id="section-ads-body" class="hidden">
+
+  <!-- Filter tabs -->
+  <div class="max-w-7xl mx-auto px-4 pt-5">
+    <div class="flex gap-1 bg-gray-900 rounded-xl p-1 w-fit">
+      <button class="ads-filter-tab active" data-ads-filter="all">All</button>
+      <button class="ads-filter-tab" data-ads-filter="pending">
+        <i class="fa-regular fa-clock mr-1"></i>Pending
+      </button>
+      <button class="ads-filter-tab" data-ads-filter="approved">
+        <i class="fa-solid fa-circle-check mr-1"></i>Approved
+      </button>
+      <button class="ads-filter-tab" data-ads-filter="rejected">
+        <i class="fa-solid fa-circle-xmark mr-1"></i>Rejected
+      </button>
+      <button class="ads-filter-tab" data-ads-filter="applied">
+        <i class="fa-solid fa-bolt mr-1"></i>Applied
+      </button>
+    </div>
+  </div>
+
+  <!-- Ads grid -->
+  <main class="max-w-7xl mx-auto px-4 py-6">
+    <div id="ads-empty-state" class="hidden flex-col items-center justify-center py-24 text-center">
+      <div class="w-20 h-20 rounded-2xl bg-gray-800 flex items-center justify-center mb-4">
+        <i class="fa-solid fa-bullhorn text-3xl text-gray-600"></i>
+      </div>
+      <p class="text-gray-400 font-medium">No ad actions here yet</p>
+      <p class="text-gray-600 text-sm mt-1">
+        Run <code class="bg-gray-800 px-1 rounded text-gray-300">python main.py ads-analyze</code>
+        or <code class="bg-gray-800 px-1 rounded text-gray-300">ads-create</code> to get started.
+      </p>
+    </div>
+    <div id="ads-grid" class="grid gap-5 grid-cols-1 md:grid-cols-2 xl:grid-cols-3"></div>
+  </main>
+
+</div><!-- /section-ads-body -->
+
+<!-- ═══════════════════════ REJECT MODAL (Posts) ══════════ -->
 <div id="reject-modal"
      class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
   <div class="bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
@@ -120,6 +177,29 @@
         Cancel
       </button>
       <button onclick="confirmReject()"
+              class="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-sm font-semibold transition-colors">
+        <i class="fa-solid fa-circle-xmark mr-1"></i>Reject
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ REJECT MODAL (Ads) ════════════ -->
+<div id="ads-reject-modal"
+     class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+  <div class="bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
+    <h2 class="text-lg font-bold mb-1">Reject Ad Action</h2>
+    <p class="text-sm text-gray-400 mb-4">Optionally explain why this action was rejected.</p>
+    <textarea id="ads-reject-reason"
+              class="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2
+                     text-sm text-gray-100 focus:outline-none focus:ring-2 focus:ring-red-500"
+              placeholder="Reason (optional)..." rows="3"></textarea>
+    <div class="flex gap-3 mt-4 justify-end">
+      <button onclick="closeAdsRejectModal()"
+              class="px-4 py-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-sm transition-colors">
+        Cancel
+      </button>
+      <button onclick="confirmAdsReject()"
               class="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-sm font-semibold transition-colors">
         <i class="fa-solid fa-circle-xmark mr-1"></i>Reject
       </button>
@@ -178,9 +258,13 @@
 <script>
 // ─── State ───────────────────────────────────────────────────────────────────
 let allPosts = [];
-let activeFilter = 'all';
-let rejectTargetIdx = null;
-let editTargetIdx   = null;
+let allAds   = [];
+let activeFilter    = 'all';
+let activeAdsFilter = 'all';
+let activeSection   = 'posts';
+let rejectTargetIdx     = null;
+let adsRejectTargetIdx  = null;
+let editTargetIdx       = null;
 
 // ─── Platform config ─────────────────────────────────────────────────────────
 const PLATFORM = {
@@ -206,6 +290,7 @@ const STATUS_BADGE = {
   approved:  'bg-green-900/60  text-green-300  border border-green-700',
   rejected:  'bg-red-900/60    text-red-300    border border-red-700',
   published: 'bg-blue-900/60   text-blue-300   border border-blue-700',
+  applied:   'bg-teal-900/60   text-teal-300   border border-teal-700',
 };
 
 const STATUS_ICON = {
@@ -213,20 +298,58 @@ const STATUS_ICON = {
   approved:  'fa-solid fa-circle-check',
   rejected:  'fa-solid fa-circle-xmark',
   published: 'fa-solid fa-paper-plane',
+  applied:   'fa-solid fa-bolt',
 };
 
+const PRIORITY_BADGE = {
+  high:   'bg-red-900/60   text-red-300   border border-red-700',
+  medium: 'bg-amber-900/60 text-amber-300 border border-amber-700',
+  low:    'bg-gray-800     text-gray-400  border border-gray-700',
+};
+
+// ─── Section switcher ─────────────────────────────────────────────────────────
+function switchSection(section) {
+  activeSection = section;
+  document.getElementById('section-posts-body').classList.toggle('hidden', section !== 'posts');
+  document.getElementById('section-ads-body').classList.toggle('hidden', section !== 'ads');
+  document.getElementById('section-posts').classList.toggle('active', section === 'posts');
+  document.getElementById('section-ads').classList.toggle('active', section === 'ads');
+
+  if (section === 'posts') renderStats(computePostStats());
+  else renderStats(computeAdsStats());
+}
+
+function computePostStats() {
+  const s = { total: allPosts.length, pending: 0, approved: 0, rejected: 0, published: 0 };
+  allPosts.forEach(p => { if (s[p.status] !== undefined) s[p.status]++; });
+  return s;
+}
+
+function computeAdsStats() {
+  const s = { total: allAds.length, pending: 0, approved: 0, rejected: 0, applied: 0 };
+  allAds.forEach(a => { if (s[a.status] !== undefined) s[a.status]++; });
+  return s;
+}
+
 // ─── Data fetching ────────────────────────────────────────────────────────────
-async function loadPosts() {
+async function loadAll() {
   const icon = document.getElementById('refresh-icon');
   icon.classList.add('animate-spin');
   try {
-    const res  = await fetch('/api/posts');
-    const data = await res.json();
-    allPosts = data.posts;
-    renderStats(data.stats);
+    const [postsRes, adsRes] = await Promise.all([
+      fetch('/api/posts'),
+      fetch('/api/ads'),
+    ]);
+    const postsData = await postsRes.json();
+    const adsData   = await adsRes.json();
+    allPosts = postsData.posts;
+    allAds   = adsData.actions;
+    if (activeSection === 'posts') renderStats(computePostStats());
+    else renderStats(computeAdsStats());
     renderGrid();
+    renderAdsGrid();
   } catch (e) {
-    toast('Failed to load posts', 'error');
+    toast('Failed to load data', 'error');
   } finally {
     icon.classList.remove('animate-spin');
   }
@@ -235,21 +358,30 @@ async function loadPosts() {
 // ─── Stats bar ────────────────────────────────────────────────────────────────
 function renderStats(stats) {
   const bar = document.getElementById('stat-bar');
-  const pills = [
-    { key: 'total',     label: 'Total',     color: 'bg-gray-700 text-gray-200' },
-    { key: 'pending',   label: 'Pending',   color: 'bg-yellow-900 text-yellow-300' },
-    { key: 'approved',  label: 'Approved',  color: 'bg-green-900  text-green-300'  },
-    { key: 'rejected',  label: 'Rejected',  color: 'bg-red-900    text-red-300'    },
-    { key: 'published', label: 'Published', color: 'bg-blue-900   text-blue-300'   },
-  ];
+  const isAds = activeSection === 'ads';
+  const pills = isAds
+    ? [
+        { key: 'total',    label: 'Total',    color: 'bg-gray-700 text-gray-200' },
+        { key: 'pending',  label: 'Pending',  color: 'bg-yellow-900 text-yellow-300' },
+        { key: 'approved', label: 'Approved', color: 'bg-green-900  text-green-300'  },
+        { key: 'rejected', label: 'Rejected', color: 'bg-red-900    text-red-300'    },
+        { key: 'applied',  label: 'Applied',  color: 'bg-teal-900   text-teal-300'   },
+      ]
+    : [
+        { key: 'total',     label: 'Total',     color: 'bg-gray-700 text-gray-200' },
+        { key: 'pending',   label: 'Pending',   color: 'bg-yellow-900 text-yellow-300' },
+        { key: 'approved',  label: 'Approved',  color: 'bg-green-900  text-green-300'  },
+        { key: 'rejected',  label: 'Rejected',  color: 'bg-red-900    text-red-300'    },
+        { key: 'published', label: 'Published', color: 'bg-blue-900   text-blue-300'   },
+      ];
   bar.innerHTML = pills.map(p =>
     `<span class="px-2.5 py-1 rounded-full ${p.color}">
-      ${stats[p.key]} ${p.label}
+      ${stats[p.key] ?? 0} ${p.label}
     </span>`
   ).join('');
 }
 
-// ─── Filter tabs ──────────────────────────────────────────────────────────────
+// ─── Filter tabs (Posts) ──────────────────────────────────────────────────────
 document.querySelectorAll('.filter-tab').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
@@ -259,7 +391,17 @@ document.querySelectorAll('.filter-tab').forEach(btn => {
   });
 });
 
-// ─── Grid renderer ────────────────────────────────────────────────────────────
+// ─── Filter tabs (Ads) ────────────────────────────────────────────────────────
+document.querySelectorAll('.ads-filter-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.ads-filter-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeAdsFilter = btn.dataset.adsFilter;
+    renderAdsGrid();
+  });
+});
+
+// ─── Posts Grid ───────────────────────────────────────────────────────────────
 function renderGrid() {
   const grid  = document.getElementById('post-grid');
   const empty = document.getElementById('empty-state');
@@ -297,7 +439,6 @@ function buildCard(post) {
   const queuedAt  = post.queued_at ? new Date(post.queued_at).toLocaleString() : '';
   const editedAt  = post.edited_at ? `<span class="text-violet-400">• edited</span>` : '';
 
-  // Action buttons vary by status
   let actions = '';
   if (status === 'pending') {
     actions = `
@@ -408,7 +549,222 @@ function buildCard(post) {
   </article>`;
 }
 
-// ─── Actions ─────────────────────────────────────────────────────────────────
+// ─── Ads Grid ─────────────────────────────────────────────────────────────────
+function renderAdsGrid() {
+  const grid  = document.getElementById('ads-grid');
+  const empty = document.getElementById('ads-empty-state');
+
+  const filtered = activeAdsFilter === 'all'
+    ? allAds
+    : allAds.filter(a => a.status === activeAdsFilter);
+
+  if (filtered.length === 0) {
+    grid.innerHTML = '';
+    empty.classList.remove('hidden');
+    empty.classList.add('flex');
+    return;
+  }
+
+  empty.classList.add('hidden');
+  empty.classList.remove('flex');
+  grid.innerHTML = filtered.map(a => buildAdsCard(a)).join('');
+}
+
+function buildAdsCard(action) {
+  const idx      = action._index;
+  const status   = action.status || 'pending';
+  const badge    = STATUS_BADGE[status]   || 'bg-gray-700 text-gray-300';
+  const sIcon    = STATUS_ICON[status]    || 'fa-solid fa-question';
+  const priority = action.priority || 'medium';
+  const prioBadge = PRIORITY_BADGE[priority] || PRIORITY_BADGE.medium;
+  const label    = action.type_label || action.type || '—';
+  const target   = escapeHtml(action.target_name || '—');
+  const level    = escapeHtml(action.target_level || '');
+  const current  = escapeHtml(action.current_value || '—');
+  const rec      = escapeHtml(action.recommended_value || '—');
+  const reason   = escapeHtml(action.reason || '—');
+  const queuedAt = action.queued_at ? new Date(action.queued_at).toLocaleString() : '';
+
+  // Metrics row
+  const metrics = action.metrics || {};
+  const metricsHtml = Object.keys(metrics).length > 0
+    ? `<div class="flex flex-wrap gap-2 mt-2">
+        ${metrics.spend !== undefined ? `<span class="metric-pill">💰 $${metrics.spend}</span>` : ''}
+        ${metrics.ctr !== undefined ? `<span class="metric-pill">🎯 CTR ${metrics.ctr}%</span>` : ''}
+        ${metrics.cpc !== undefined ? `<span class="metric-pill">🖱 CPC $${metrics.cpc}</span>` : ''}
+        ${metrics.impressions !== undefined ? `<span class="metric-pill">👁 ${Number(metrics.impressions).toLocaleString()} impr.</span>` : ''}
+       </div>`
+    : '';
+
+  // Campaign plan section (for create_campaign type)
+  let planHtml = '';
+  if (action.type === 'create_campaign' && action.campaign_plan) {
+    const plan    = action.campaign_plan;
+    const camp    = plan.campaign || {};
+    const adset   = plan.adset || {};
+    const copies  = plan.ad_copies || [];
+    const targeting = adset.targeting || {};
+    const countries = (targeting.geo_locations || {}).countries || [];
+    const interests = (targeting.interests || []).slice(0, 3).map(i => i.name || i).join(', ');
+    const budget  = ((camp.daily_budget_cents || 0) / 100).toFixed(2);
+
+    const copiesHtml = copies.slice(0, 3).map(c => `
+      <div class="bg-gray-800 rounded-lg px-3 py-2 text-xs text-gray-300">
+        <span class="text-violet-400 font-semibold">[${escapeHtml(c.variant || '')}] ${escapeHtml(c.angle || '')}</span><br/>
+        <strong>Headline:</strong> ${escapeHtml(c.headline || '')}<br/>
+        <strong>CTA:</strong> ${escapeHtml(c.call_to_action || '')}
+      </div>`).join('');
+
+    planHtml = `
+      <div class="mt-3">
+        <button onclick="togglePlan('plan-${idx}')"
+                class="flex items-center gap-1.5 text-xs text-violet-400 hover:text-violet-300 transition-colors">
+          <i class="fa-solid fa-chevron-right plan-chevron-${idx} transition-transform duration-200"></i>
+          View Campaign Plan
+        </button>
+        <div id="plan-${idx}" class="plan-details mt-3 flex flex-col gap-2">
+          <div class="text-xs text-gray-400 bg-gray-800/60 rounded-lg px-3 py-2">
+            <div class="font-semibold text-gray-300 mb-1">${escapeHtml(camp.name || 'Campaign')}</div>
+            <div>Objective: <span class="text-gray-200">${escapeHtml(camp.objective_label || camp.objective || '')}</span></div>
+            <div>Daily Budget: <span class="text-green-400">$${budget}/day</span></div>
+            <div>Countries: <span class="text-gray-200">${escapeHtml(countries.join(', ') || '—')}</span></div>
+            <div>Age: <span class="text-gray-200">${targeting.age_min || 18}–${targeting.age_max || 65}</span></div>
+            ${interests ? `<div>Interests: <span class="text-gray-200">${escapeHtml(interests)}</span></div>` : ''}
+          </div>
+          <p class="text-xs text-gray-500 uppercase font-semibold tracking-wide">Ad Copy Variants</p>
+          ${copiesHtml}
+        </div>
+      </div>`;
+  }
+
+  // Action buttons
+  let actions = '';
+  if (status === 'pending') {
+    actions = `
+      <button onclick="approveAds(${idx})"
+              class="action-btn bg-green-700 hover:bg-green-600 text-white">
+        <i class="fa-solid fa-check mr-1"></i>Approve
+      </button>
+      <button onclick="openAdsRejectModal(${idx})"
+              class="action-btn bg-red-700 hover:bg-red-600 text-white">
+        <i class="fa-solid fa-xmark mr-1"></i>Reject
+      </button>`;
+  } else if (status === 'approved') {
+    actions = `
+      <button onclick="applyAds(${idx})"
+              class="action-btn bg-teal-700 hover:bg-teal-600 text-white">
+        <i class="fa-solid fa-bolt mr-1"></i>Apply Now
+      </button>
+      <button onclick="resetAds(${idx})"
+              class="action-btn bg-yellow-700 hover:bg-yellow-600 text-white">
+        <i class="fa-solid fa-rotate-left mr-1"></i>Undo
+      </button>`;
+  } else if (status === 'rejected') {
+    actions = `
+      <button onclick="resetAds(${idx})"
+              class="action-btn bg-yellow-700 hover:bg-yellow-600 text-white">
+        <i class="fa-solid fa-rotate-left mr-1"></i>Restore
+      </button>
+      <button onclick="deleteAds(${idx})"
+              class="action-btn bg-gray-700 hover:bg-red-800 text-gray-300">
+        <i class="fa-solid fa-trash mr-1"></i>Delete
+      </button>`;
+  } else if (status === 'applied') {
+    actions = `
+      <span class="text-xs text-teal-400 flex items-center gap-1">
+        <i class="fa-solid fa-bolt"></i> Applied
+        ${action.applied_at ? '· ' + new Date(action.applied_at).toLocaleString() : ''}
+      </span>`;
+  }
+
+  const rejectionNote = action.rejection_reason
+    ? `<div class="mt-3 px-3 py-2 bg-red-950/50 border border-red-800 rounded-lg text-xs text-red-300">
+         <i class="fa-solid fa-triangle-exclamation mr-1"></i>
+         <strong>Reason:</strong> ${escapeHtml(action.rejection_reason)}
+       </div>`
+    : '';
+
+  return `
+  <article id="ads-card-${idx}"
+           class="post-card bg-gray-900 border border-gray-800 rounded-2xl
+                  overflow-hidden flex flex-col shadow-lg hover:border-gray-700 transition-colors">
+
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-indigo-700 to-blue-600 p-4 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <i class="fa-solid fa-bullhorn text-white text-lg drop-shadow"></i>
+        <span class="font-bold text-white text-sm drop-shadow">${escapeHtml(label)}</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${prioBadge}">
+          ${priority.toUpperCase()}
+        </span>
+        <span class="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full
+                     ${badge} backdrop-blur-sm">
+          <i class="${sIcon} text-[10px]"></i>
+          ${status.charAt(0).toUpperCase() + status.slice(1)}
+        </span>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div class="flex-1 p-4 flex flex-col gap-3">
+
+      <!-- Target -->
+      <div>
+        <p class="text-xs text-gray-500 uppercase font-semibold tracking-wide mb-1">Target</p>
+        <p class="text-sm text-gray-200 font-medium">${target}
+          ${level ? `<span class="text-xs text-gray-500 font-normal ml-1">(${level})</span>` : ''}
+        </p>
+      </div>
+
+      <!-- Current → Recommended -->
+      <div class="grid grid-cols-2 gap-2 text-xs">
+        <div class="bg-gray-800/60 rounded-lg px-3 py-2">
+          <p class="text-gray-500 font-semibold uppercase tracking-wide mb-0.5">Current</p>
+          <p class="text-gray-300">${current}</p>
+        </div>
+        <div class="bg-gray-800/60 rounded-lg px-3 py-2">
+          <p class="text-gray-500 font-semibold uppercase tracking-wide mb-0.5">Recommended</p>
+          <p class="text-green-300">${rec}</p>
+        </div>
+      </div>
+
+      <!-- Reason -->
+      <div class="text-xs text-gray-400 bg-gray-800/40 rounded-lg px-3 py-2">
+        <i class="fa-solid fa-lightbulb text-amber-500 mr-1"></i>${reason}
+      </div>
+
+      ${metricsHtml}
+      ${planHtml}
+
+      <!-- Meta -->
+      <div class="text-xs text-gray-600 flex items-center gap-2 flex-wrap mt-1">
+        ${queuedAt ? `<span>Queued: ${queuedAt}</span>` : ''}
+      </div>
+
+      ${rejectionNote}
+    </div>
+
+    <!-- Action footer -->
+    <div class="px-4 pb-4 flex items-center gap-2 flex-wrap">
+      ${actions}
+    </div>
+
+  </article>`;
+}
+
+// Toggle campaign plan details
+function togglePlan(planId) {
+  const el = document.getElementById(planId);
+  if (!el) return;
+  const idx = planId.split('-').pop();
+  const chevron = document.querySelector(`.plan-chevron-${idx}`);
+  el.classList.toggle('open');
+  if (chevron) chevron.style.transform = el.classList.contains('open') ? 'rotate(90deg)' : '';
+}
+
+// ─── Posts Actions ────────────────────────────────────────────────────────────
 async function approvePost(idx) {
   const card = document.getElementById(`card-${idx}`);
   card?.classList.add('fading');
@@ -417,10 +773,9 @@ async function approvePost(idx) {
     const data = await res.json();
     if (!data.ok) throw new Error(data.error);
     toast('Post approved ✓', 'success');
-    // Update allPosts and re-render
     const pi = allPosts.findIndex(p => p._index === idx);
     if (pi !== -1) allPosts[pi].status = 'approved';
-    renderStats(data.stats);
+    renderStats(computePostStats());
     renderGrid();
   } catch (e) {
     card?.classList.remove('fading');
@@ -436,7 +791,7 @@ async function resetPost(idx) {
     toast('Post reset to pending', 'info');
     const pi = allPosts.findIndex(p => p._index === idx);
     if (pi !== -1) { allPosts[pi].status = 'pending'; delete allPosts[pi].reviewed_at; }
-    renderStats(data.stats);
+    renderStats(computePostStats());
     renderGrid();
   } catch (e) {
     toast('Failed to reset post', 'error');
@@ -452,14 +807,14 @@ async function deletePost(idx) {
     const data = await res.json();
     if (!data.ok) throw new Error(data.error);
     toast('Post deleted', 'info');
-    await loadPosts();
+    await loadAll();
   } catch (e) {
     card?.classList.remove('fading');
     toast('Failed to delete post', 'error');
   }
 }
 
-// ─── Reject modal ─────────────────────────────────────────────────────────────
+// ─── Posts Reject modal ───────────────────────────────────────────────────────
 function openRejectModal(idx) {
   rejectTargetIdx = idx;
   document.getElementById('reject-reason').value = '';
@@ -494,7 +849,7 @@ async function confirmReject() {
       allPosts[pi].status = 'rejected';
       if (reason) allPosts[pi].rejection_reason = reason;
     }
-    renderStats(data.stats);
+    renderStats(computePostStats());
     renderGrid();
   } catch (e) {
     card?.classList.remove('fading');
@@ -538,7 +893,6 @@ async function confirmEdit() {
     const data = await res.json();
     if (!data.ok) throw new Error(data.error);
     toast('Post updated ✓', 'success');
-    // Merge updated post back into allPosts
     const pi = allPosts.findIndex(p => p._index === idx);
     if (pi !== -1) allPosts[pi] = { _index: idx, ...data.post };
     renderGrid();
@@ -547,17 +901,134 @@ async function confirmEdit() {
   }
 }
 
-// ─── Close modals on backdrop click ──────────────────────────────────────────
+// ─── Ads Actions ──────────────────────────────────────────────────────────────
+async function approveAds(idx) {
+  const card = document.getElementById(`ads-card-${idx}`);
+  card?.classList.add('fading');
+  try {
+    const res  = await fetch(`/api/ads/${idx}/approve`, { method: 'POST' });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    toast('Ad action approved ✓', 'success');
+    const ai = allAds.findIndex(a => a._index === idx);
+    if (ai !== -1) allAds[ai].status = 'approved';
+    renderStats(computeAdsStats());
+    renderAdsGrid();
+  } catch (e) {
+    card?.classList.remove('fading');
+    toast('Failed to approve action', 'error');
+  }
+}
+
+async function resetAds(idx) {
+  try {
+    const res  = await fetch(`/api/ads/${idx}/reset`, { method: 'POST' });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    toast('Action reset to pending', 'info');
+    const ai = allAds.findIndex(a => a._index === idx);
+    if (ai !== -1) { allAds[ai].status = 'pending'; delete allAds[ai].reviewed_at; }
+    renderStats(computeAdsStats());
+    renderAdsGrid();
+  } catch (e) {
+    toast('Failed to reset action', 'error');
+  }
+}
+
+async function deleteAds(idx) {
+  if (!confirm('Permanently delete this ad action?')) return;
+  const card = document.getElementById(`ads-card-${idx}`);
+  card?.classList.add('fading');
+  try {
+    const res  = await fetch(`/api/ads/${idx}/delete`, { method: 'POST' });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    toast('Action deleted', 'info');
+    await loadAll();
+  } catch (e) {
+    card?.classList.remove('fading');
+    toast('Failed to delete action', 'error');
+  }
+}
+
+async function applyAds(idx) {
+  if (!confirm('Apply this ad action to the Meta Marketing API? This will make real changes.')) return;
+  const card = document.getElementById(`ads-card-${idx}`);
+  card?.classList.add('fading');
+  try {
+    const res  = await fetch(`/api/ads/${idx}/apply`, { method: 'POST' });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    toast('Action applied to Meta API ✓', 'success');
+    const ai = allAds.findIndex(a => a._index === idx);
+    if (ai !== -1) allAds[ai].status = 'applied';
+    renderStats(computeAdsStats());
+    renderAdsGrid();
+  } catch (e) {
+    card?.classList.remove('fading');
+    toast(`Failed to apply: ${e.message}`, 'error');
+  }
+}
+
+// ─── Ads Reject modal ─────────────────────────────────────────────────────────
+function openAdsRejectModal(idx) {
+  adsRejectTargetIdx = idx;
+  document.getElementById('ads-reject-reason').value = '';
+  document.getElementById('ads-reject-modal').classList.remove('hidden');
+  document.getElementById('ads-reject-reason').focus();
+}
+
+function closeAdsRejectModal() {
+  document.getElementById('ads-reject-modal').classList.add('hidden');
+  adsRejectTargetIdx = null;
+}
+
+async function confirmAdsReject() {
+  const reason = document.getElementById('ads-reject-reason').value.trim();
+  const idx    = adsRejectTargetIdx;
+  closeAdsRejectModal();
+
+  const card = document.getElementById(`ads-card-${idx}`);
+  card?.classList.add('fading');
+
+  try {
+    const res  = await fetch(`/api/ads/${idx}/reject`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason }),
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    toast('Ad action rejected', 'warning');
+    const ai = allAds.findIndex(a => a._index === idx);
+    if (ai !== -1) {
+      allAds[ai].status = 'rejected';
+      if (reason) allAds[ai].rejection_reason = reason;
+    }
+    renderStats(computeAdsStats());
+    renderAdsGrid();
+  } catch (e) {
+    card?.classList.remove('fading');
+    toast('Failed to reject action', 'error');
+  }
+}
+
+// ─── Close modals on backdrop / Escape ───────────────────────────────────────
 document.getElementById('reject-modal').addEventListener('click', e => {
   if (e.target === e.currentTarget) closeRejectModal();
 });
 document.getElementById('edit-modal').addEventListener('click', e => {
   if (e.target === e.currentTarget) closeEditModal();
 });
-
-// ─── Keyboard shortcuts ───────────────────────────────────────────────────────
+document.getElementById('ads-reject-modal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeAdsRejectModal();
+});
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { closeRejectModal(); closeEditModal(); }
+  if (e.key === 'Escape') {
+    closeRejectModal();
+    closeEditModal();
+    closeAdsRejectModal();
+  }
 });
 
 // ─── Toast notifications ──────────────────────────────────────────────────────
@@ -578,7 +1049,7 @@ function toast(msg, type = 'info') {
   const el = document.createElement('div');
   el.className = `pointer-events-auto flex items-center gap-2 px-4 py-3 rounded-xl border
                   shadow-lg text-sm font-medium toast-enter ${colors[type] || colors.info}`;
-  el.innerHTML = `<i class="fa-solid ${icons[type] || icons.info}"></i> ${msg}`;
+  el.innerHTML = `<i class="fa-solid ${icons[type] || icons.info}"></i> ${escapeHtml(msg)}`;
 
   const container = document.getElementById('toast-container');
   container.appendChild(el);
@@ -587,13 +1058,27 @@ function toast(msg, type = 'info') {
     el.classList.remove('toast-enter');
     el.classList.add('toast-leave');
     setTimeout(() => el.remove(), 350);
-  }, 3000);
+  }, 3500);
 }
 
-// ─── Tailwind filter-tab style injection ─────────────────────────────────────
+// ─── Style injection ──────────────────────────────────────────────────────────
 const style = document.createElement('style');
 style.textContent = `
-  .filter-tab {
+  .section-tab {
+    padding: 0.375rem 1rem;
+    border-radius: 0.5rem 0.5rem 0 0;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #9ca3af;
+    transition: all 0.15s ease;
+    cursor: pointer;
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+  }
+  .section-tab:hover { color: #e5e7eb; }
+  .section-tab.active { color: #a78bfa; border-bottom-color: #7c3aed; }
+
+  .filter-tab, .ads-filter-tab {
     padding: 0.375rem 0.875rem;
     border-radius: 0.625rem;
     font-size: 0.8125rem;
@@ -603,8 +1088,9 @@ style.textContent = `
     cursor: pointer;
     white-space: nowrap;
   }
-  .filter-tab:hover { background: #1f2937; color: #e5e7eb; }
-  .filter-tab.active { background: #4c1d95; color: #fff; }
+  .filter-tab:hover, .ads-filter-tab:hover { background: #1f2937; color: #e5e7eb; }
+  .filter-tab.active, .ads-filter-tab.active { background: #4c1d95; color: #fff; }
+
   .action-btn {
     padding: 0.375rem 0.875rem;
     border-radius: 0.625rem;
@@ -620,6 +1106,14 @@ style.textContent = `
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
+  .metric-pill {
+    background: #1f2937;
+    border: 1px solid #374151;
+    border-radius: 9999px;
+    padding: 0.125rem 0.625rem;
+    font-size: 0.75rem;
+    color: #d1d5db;
+  }
 `;
 document.head.appendChild(style);
 
@@ -633,9 +1127,8 @@ function escapeHtml(str) {
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
-loadPosts();
-// Auto-refresh every 30 seconds
-setInterval(loadPosts, 30_000);
+loadAll();
+setInterval(loadAll, 30_000);
 </script>
 </body>
 </html>

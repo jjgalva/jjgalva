@@ -1,6 +1,6 @@
 """
 dashboard.py
-Flask web dashboard for reviewing and approving social media posts.
+Flask web dashboard for reviewing and approving social media posts and ad actions.
 
 Run with:
     python dashboard.py
@@ -17,12 +17,13 @@ from flask import Flask, jsonify, render_template, request
 sys.path.insert(0, os.path.dirname(__file__))
 
 from approvals.queue import load_queue, save_queue
+from approvals.ads_queue import load_ads_queue, save_ads_queue, ACTION_LABELS
 
 app = Flask(__name__)
 
 
 # ---------------------------------------------------------------------------
-# Helper
+# Helpers
 # ---------------------------------------------------------------------------
 
 def _get_stats(posts: list[dict]) -> dict:
@@ -33,6 +34,17 @@ def _get_stats(posts: list[dict]) -> dict:
         "approved": statuses.count("approved"),
         "rejected": statuses.count("rejected"),
         "published": statuses.count("published"),
+    }
+
+
+def _get_ads_stats(actions: list[dict]) -> dict:
+    statuses = [a.get("status", "unknown") for a in actions]
+    return {
+        "total": len(actions),
+        "pending": statuses.count("pending"),
+        "approved": statuses.count("approved"),
+        "rejected": statuses.count("rejected"),
+        "applied": statuses.count("applied"),
     }
 
 
@@ -133,6 +145,96 @@ def api_delete(idx: int):
     posts.pop(idx)
     save_queue(posts)
     return jsonify({"ok": True, "stats": _get_stats(posts)})
+
+
+# ---------------------------------------------------------------------------
+# Ads REST API
+# ---------------------------------------------------------------------------
+
+@app.get("/api/ads")
+def api_get_ads():
+    """Return all ad actions with their index and computed stats."""
+    actions = load_ads_queue()
+    indexed = [{"_index": i, "type_label": ACTION_LABELS.get(a.get("type", ""), a.get("type", "")), **a}
+               for i, a in enumerate(actions)]
+    return jsonify({"actions": indexed, "stats": _get_ads_stats(actions)})
+
+
+@app.post("/api/ads/<int:idx>/approve")
+def api_ads_approve(idx: int):
+    actions = load_ads_queue()
+    if idx < 0 or idx >= len(actions):
+        return jsonify({"error": "Action not found"}), 404
+
+    actions[idx]["status"] = "approved"
+    actions[idx]["reviewed_at"] = datetime.utcnow().isoformat()
+    actions[idx].pop("rejection_reason", None)
+    save_ads_queue(actions)
+    return jsonify({"ok": True, "stats": _get_ads_stats(actions)})
+
+
+@app.post("/api/ads/<int:idx>/reject")
+def api_ads_reject(idx: int):
+    actions = load_ads_queue()
+    if idx < 0 or idx >= len(actions):
+        return jsonify({"error": "Action not found"}), 404
+
+    body = request.get_json(silent=True) or {}
+    actions[idx]["status"] = "rejected"
+    actions[idx]["reviewed_at"] = datetime.utcnow().isoformat()
+    if body.get("reason"):
+        actions[idx]["rejection_reason"] = body["reason"]
+    save_ads_queue(actions)
+    return jsonify({"ok": True, "stats": _get_ads_stats(actions)})
+
+
+@app.post("/api/ads/<int:idx>/reset")
+def api_ads_reset(idx: int):
+    """Reset an ad action back to pending."""
+    actions = load_ads_queue()
+    if idx < 0 or idx >= len(actions):
+        return jsonify({"error": "Action not found"}), 404
+
+    actions[idx]["status"] = "pending"
+    actions[idx].pop("reviewed_at", None)
+    actions[idx].pop("rejection_reason", None)
+    save_ads_queue(actions)
+    return jsonify({"ok": True, "stats": _get_ads_stats(actions)})
+
+
+@app.post("/api/ads/<int:idx>/delete")
+def api_ads_delete(idx: int):
+    """Permanently remove an ad action from the queue."""
+    actions = load_ads_queue()
+    if idx < 0 or idx >= len(actions):
+        return jsonify({"error": "Action not found"}), 404
+
+    actions.pop(idx)
+    save_ads_queue(actions)
+    return jsonify({"ok": True, "stats": _get_ads_stats(actions)})
+
+
+@app.post("/api/ads/<int:idx>/apply")
+def api_ads_apply(idx: int):
+    """Apply an approved ad action to the Meta Marketing API."""
+    actions = load_ads_queue()
+    if idx < 0 or idx >= len(actions):
+        return jsonify({"error": "Action not found"}), 404
+
+    action = actions[idx]
+    if action.get("status") != "approved":
+        return jsonify({"error": "Action must be approved before applying"}), 400
+
+    try:
+        from agents.ads_manager import apply_action
+        result = apply_action(action)
+        actions[idx]["status"] = "applied"
+        actions[idx]["applied_at"] = result["applied_at"]
+        actions[idx]["api_result"] = result.get("api_response", {})
+        save_ads_queue(actions)
+        return jsonify({"ok": True, "stats": _get_ads_stats(actions)})
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 500
 
 
 # ---------------------------------------------------------------------------
