@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dragon Ball — Comparador de Poder</title>
+<style>
+  :root {
+    --bg: #0d0b1e;
+    --bg-card: #1a1733;
+    --bg-card-hover: #241f47;
+    --border: #35305e;
+    --text: #f0eeff;
+    --text-dim: #a09cc7;
+    --orange: #ff9f1c;
+    --orange-bright: #ffbf47;
+    --blue: #4cc9f0;
+    --gold: #ffd60a;
+    --red: #ef476f;
+    --green: #06d6a0;
+    --radius: 14px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: radial-gradient(ellipse at 50% -20%, #2b2454 0%, var(--bg) 60%);
+    min-height: 100vh;
+    color: var(--text);
+    padding-bottom: 4rem;
+  }
+  header {
+    text-align: center;
+    padding: 2.5rem 1rem 1.5rem;
+  }
+  header h1 {
+    font-size: clamp(1.8rem, 5vw, 3rem);
+    font-weight: 900;
+    letter-spacing: 1px;
+    background: linear-gradient(180deg, var(--gold) 20%, var(--orange) 70%, #e05e00);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-transform: uppercase;
+    filter: drop-shadow(0 2px 12px rgba(255, 159, 28, .35));
+  }
+  header p { color: var(--text-dim); margin-top: .5rem; font-size: 1.05rem; }
+
+  .container { max-width: 1100px; margin: 0 auto; padding: 0 1rem; }
+
+  .instructions {
+    text-align: center;
+    background: rgba(76, 201, 240, .08);
+    border: 1px solid rgba(76, 201, 240, .25);
+    border-radius: var(--radius);
+    padding: .8rem 1rem;
+    margin-bottom: 1.5rem;
+    color: var(--blue);
+    font-weight: 600;
+  }
+
+  /* ---- Grid de personajes ---- */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 1rem;
+  }
+  .card {
+    background: var(--bg-card);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.1rem 1rem 1rem;
+    cursor: pointer;
+    transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease, background .15s ease;
+    position: relative;
+    text-align: center;
+  }
+  .card:hover {
+    transform: translateY(-4px);
+    background: var(--bg-card-hover);
+    border-color: var(--orange);
+  }
+  .card.selected-1 {
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px rgba(76, 201, 240, .3), 0 0 25px rgba(76, 201, 240, .25);
+  }
+  .card.selected-2 {
+    border-color: var(--red);
+    box-shadow: 0 0 0 3px rgba(239, 71, 111, .3), 0 0 25px rgba(239, 71, 111, .25);
+  }
+  .card .badge {
+    position: absolute;
+    top: -12px;
+    right: -8px;
+    font-size: .72rem;
+    font-weight: 800;
+    padding: .25rem .6rem;
+    border-radius: 999px;
+    color: #0d0b1e;
+    display: none;
+  }
+  .card.selected-1 .badge { display: inline-block; background: var(--blue); }
+  .card.selected-2 .badge { display: inline-block; background: var(--red); }
+
+  .avatar {
+    width: 78px;
+    height: 78px;
+    margin: 0 auto .7rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.3rem;
+    font-weight: 900;
+    color: #fff;
+    text-shadow: 0 2px 6px rgba(0,0,0,.45);
+    box-shadow: inset 0 -8px 14px rgba(0,0,0,.28), 0 4px 14px rgba(0,0,0,.4);
+  }
+  .card h3 { font-size: 1.12rem; margin-bottom: .15rem; }
+  .card .race { color: var(--text-dim); font-size: .82rem; margin-bottom: .6rem; }
+
+  .card select {
+    width: 100%;
+    background: #12102a;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: .45rem .5rem;
+    font-size: .85rem;
+    cursor: pointer;
+  }
+  .card select:focus { outline: 2px solid var(--orange); }
+
+  .power-tag {
+    margin-top: .55rem;
+    font-size: .8rem;
+    color: var(--orange-bright);
+    font-weight: 700;
+    letter-spacing: .3px;
+  }
+
+  /* ---- Barra de acciones ---- */
+  .actions {
+    position: sticky;
+    bottom: 1rem;
+    display: flex;
+    justify-content: center;
+    gap: .8rem;
+    margin-top: 2rem;
+    z-index: 10;
+  }
+  .btn {
+    border: none;
+    border-radius: 999px;
+    padding: .9rem 2.2rem;
+    font-size: 1.05rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: transform .12s ease, filter .12s ease;
+    letter-spacing: .5px;
+  }
+  .btn:active { transform: scale(.96); }
+  .btn-fight {
+    background: linear-gradient(135deg, var(--gold), var(--orange) 60%, #e05e00);
+    color: #241500;
+    box-shadow: 0 6px 22px rgba(255, 159, 28, .45);
+  }
+  .btn-fight:disabled {
+    filter: grayscale(.8) brightness(.6);
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+  .btn-fight:not(:disabled):hover { filter: brightness(1.1); }
+  .btn-reset {
+    background: transparent;
+    color: var(--text-dim);
+    border: 2px solid var(--border);
+  }
+  .btn-reset:hover { color: var(--text); border-color: var(--text-dim); }
+
+  /* ---- Resultado ---- */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(6, 4, 18, .82);
+    backdrop-filter: blur(6px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    z-index: 100;
+  }
+  .overlay.open { display: flex; }
+  .result {
+    background: var(--bg-card);
+    border: 2px solid var(--border);
+    border-radius: 20px;
+    max-width: 620px;
+    width: 100%;
+    padding: 2rem 1.6rem;
+    text-align: center;
+    animation: pop .28s ease;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  @keyframes pop {
+    from { transform: scale(.85); opacity: 0; }
+    to   { transform: scale(1); opacity: 1; }
+  }
+  .versus {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: .5rem;
+    margin-bottom: 1.4rem;
+  }
+  .fighter { flex: 1; min-width: 0; }
+  .fighter .avatar { width: 88px; height: 88px; font-size: 2.6rem; }
+  .fighter h3 { font-size: 1.05rem; }
+  .fighter .form-name { color: var(--text-dim); font-size: .82rem; margin-top: .15rem; }
+  .fighter.winner .avatar {
+    box-shadow: 0 0 0 4px var(--gold), 0 0 35px rgba(255, 214, 10, .55);
+    animation: aura 1.2s ease-in-out infinite alternate;
+  }
+  @keyframes aura {
+    from { box-shadow: 0 0 0 4px var(--gold), 0 0 25px rgba(255, 214, 10, .45); }
+    to   { box-shadow: 0 0 0 4px var(--gold), 0 0 50px rgba(255, 214, 10, .8); }
+  }
+  .vs-label {
+    font-size: 1.6rem;
+    font-weight: 900;
+    color: var(--red);
+    align-self: center;
+    text-shadow: 0 0 14px rgba(239, 71, 111, .6);
+    flex: 0 0 auto;
+  }
+  .verdict {
+    font-size: 1.35rem;
+    font-weight: 900;
+    margin-bottom: .4rem;
+  }
+  .verdict .name { color: var(--gold); }
+  .verdict-sub { color: var(--text-dim); font-size: .95rem; margin-bottom: 1.4rem; }
+
+  .bars { text-align: left; margin-bottom: 1.5rem; }
+  .bar-row { margin-bottom: .9rem; }
+  .bar-row .bar-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: .85rem;
+    margin-bottom: .3rem;
+    color: var(--text-dim);
+  }
+  .bar-row .bar-label strong { color: var(--text); }
+  .bar-track {
+    height: 14px;
+    background: #12102a;
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 999px;
+    width: 0;
+    transition: width .9s cubic-bezier(.2, .8, .2, 1);
+  }
+  .bar-fill.f1 { background: linear-gradient(90deg, #3a86ff, var(--blue)); }
+  .bar-fill.f2 { background: linear-gradient(90deg, #b5179e, var(--red)); }
+
+  footer {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: .8rem;
+    margin-top: 3rem;
+    padding: 0 1rem;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⚡ Dragon Ball · Comparador de Poder ⚡</h1>
+  <p>Elige dos guerreros, sus transformaciones… ¡y descubre quién es más fuerte!</p>
+</header>
+
+<div class="container">
+  <div class="instructions" id="instructions">
+    Selecciona <strong>2 personajes</strong> haciendo clic en sus tarjetas
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="actions">
+    <button class="btn btn-fight" id="fightBtn" disabled>¡LUCHAR!</button>
+    <button class="btn btn-reset" id="resetBtn">Reiniciar</button>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="result">
+    <div class="versus" id="versus"></div>
+    <div class="verdict" id="verdict"></div>
+    <div class="verdict-sub" id="verdictSub"></div>
+    <div class="bars" id="bars"></div>
+    <button class="btn btn-fight" id="closeBtn">Cerrar</button>
+  </div>
+</div>
+
+<footer>
+  Niveles de poder aproximados basados en el manga, el anime y las guías oficiales.<br>
+  Página de fans sin ánimo de lucro. Dragon Ball es obra de Akira Toriyama.
+</footer>
+
+<script>
+// Niveles de poder en escala relativa (unidades arbitrarias, escala logarítmica implícita)
+const CHARACTERS = [
+  {
+    id: 'goku', name: 'Goku', race: 'Saiyan', emoji: '🥋',
+    color: 'linear-gradient(135deg, #ff9f1c, #e05e00)',
+    forms: [
+      { name: 'Base', power: 10000 },
+      { name: 'Super Saiyan', power: 500000 },
+      { name: 'Super Saiyan 2', power: 1000000 },
+      { name: 'Super Saiyan 3', power: 4000000 },
+      { name: 'Super Saiyan God', power: 30000000 },
+      { name: 'Super Saiyan Blue', power: 60000000 },
+      { name: 'Ultra Instinto', power: 200000000 },
+    ],
+  },
+  {
+    id: 'vegeta', name: 'Vegeta', race: 'Saiyan', emoji: '👑',
+    color: 'linear-gradient(135deg, #3a86ff, #1b4bbf)',
+    forms: [
+      { name: 'Base', power: 9500 },
+      { name: 'Super Saiyan', power: 480000 },
+      { name: 'Super Saiyan 2', power: 950000 },
+      { name: 'Majin Vegeta', power: 1200000 },
+      { name: 'Super Saiyan God', power: 28000000 },
+      { name: 'Super Saiyan Blue', power: 58000000 },
+      { name: 'Ultra Ego', power: 190000000 },
+    ],
+  },
+  {
+    id: 'gohan', name: 'Gohan', race: 'Semi-Saiyan', emoji: '📚',
+    color: 'linear-gradient(135deg, #9b5de5, #5d2ea6)',
+    forms: [
+      { name: 'Base', power: 8000 },
+      { name: 'Super Saiyan', power: 450000 },
+      { name: 'Super Saiyan 2 (Cell Games)', power: 1500000 },
+      { name: 'Gohan Definitivo', power: 5000000 },
+      { name: 'Gohan Bestia', power: 210000000 },
+    ],
+  },
+  {
+    id: 'piccolo', name: 'Piccolo', race: 'Namekiano', emoji: '🧘',
+    color: 'linear-gradient(135deg, #06d6a0, #04916d)',
+    forms: [
+      { name: 'Base', power: 7000 },
+      { name: 'Fusión con Kami', power: 900000 },
+      { name: 'Potencial Liberado', power: 25000000 },
+      { name: 'Piccolo Naranja', power: 120000000 },
+    ],
+  },
+  {
+    id: 'frieza', name: 'Freezer', race: 'Raza de Frost', emoji: '❄️',
+    color: 'linear-gradient(135deg, #cdb4db, #7b5ea7)',
+    forms: [
+      { name: 'Primera forma', power: 530000 },
+      { name: 'Forma final', power: 12000000 },
+      { name: 'Golden Freezer', power: 65000000 },
+      { name: 'Black Freezer', power: 250000000 },
+    ],
+  },
+  {
+    id: 'cell', name: 'Cell', race: 'Bioandroide', emoji: '🦗',
+    color: 'linear-gradient(135deg, #80b918, #4a7209)',
+    forms: [
+      { name: 'Imperfecto', power: 400000 },
+      { name: 'Semi-perfecto', power: 700000 },
+      { name: 'Perfecto', power: 1300000 },
+      { name: 'Súper Perfecto', power: 1600000 },
+    ],
+  },
+  {
+    id: 'buu', name: 'Majin Buu', race: 'Majin', emoji: '🍬',
+    color: 'linear-gradient(135deg, #ff70a6, #d64072)',
+    forms: [
+      { name: 'Buu Gordo', power: 1800000 },
+      { name: 'Super Buu', power: 3500000 },
+      { name: 'Buu (Gohan absorbido)', power: 5500000 },
+      { name: 'Kid Buu', power: 4200000 },
+    ],
+  },
+  {
+    id: 'trunks', name: 'Trunks del Futuro', race: 'Semi-Saiyan', emoji: '⚔️',
+    color: 'linear-gradient(135deg, #4cc9f0, #2274a5)',
+    forms: [
+      { name: 'Base', power: 8500 },
+      { name: 'Super Saiyan', power: 460000 },
+      { name: 'Super Saiyan 2', power: 980000 },
+      { name: 'Super Saiyan Ira', power: 45000000 },
+    ],
+  },
+  {
+    id: 'broly', name: 'Broly', race: 'Saiyan', emoji: '💢',
+    color: 'linear-gradient(135deg, #70e000, #2f7a06)',
+    forms: [
+      { name: 'Base', power: 4000000 },
+      { name: 'Saiyan Berserker', power: 55000000 },
+      { name: 'Super Saiyan Legendario', power: 150000000 },
+    ],
+  },
+  {
+    id: 'gotenks', name: 'Gotenks', race: 'Fusión', emoji: '🌀',
+    color: 'linear-gradient(135deg, #ffd60a, #cc9a00)',
+    forms: [
+      { name: 'Base', power: 900000 },
+      { name: 'Super Saiyan', power: 2500000 },
+      { name: 'Super Saiyan 3', power: 4500000 },
+    ],
+  },
+  {
+    id: 'krillin', name: 'Krilin', race: 'Humano', emoji: '🟠',
+    color: 'linear-gradient(135deg, #f77f00, #b35c00)',
+    forms: [
+      { name: 'Base', power: 5000 },
+      { name: 'Potencial desbloqueado', power: 75000 },
+    ],
+  },
+  {
+    id: 'beerus', name: 'Beerus', race: 'Dios de la Destrucción', emoji: '😾',
+    color: 'linear-gradient(135deg, #7209b7, #3a0ca3)',
+    forms: [
+      { name: 'Relajado', power: 150000000 },
+      { name: 'En serio', power: 400000000 },
+    ],
+  },
+  {
+    id: 'jiren', name: 'Jiren', race: 'Raza desconocida', emoji: '🔴',
+    color: 'linear-gradient(135deg, #ef476f, #a4133c)',
+    forms: [
+      { name: 'Base', power: 120000000 },
+      { name: 'Poder máximo', power: 230000000 },
+    ],
+  },
+  {
+    id: 'whis', name: 'Whis', race: 'Ángel', emoji: '🪄',
+    color: 'linear-gradient(135deg, #48cae4, #0096c7)',
+    forms: [
+      { name: 'Ángel guía', power: 600000000 },
+    ],
+  },
+];
+
+const state = { selection: [] }; // hasta 2 ids en orden
+
+const grid = document.getElementById('grid');
+const fightBtn = document.getElementById('fightBtn');
+const resetBtn = document.getElementById('resetBtn');
+const overlay = document.getElementById('overlay');
+const closeBtn = document.getElementById('closeBtn');
+const instructions = document.getElementById('instructions');
+
+function formatPower(n) {
+  return n.toLocaleString('es-ES');
+}
+
+function getForm(char) {
+  const sel = document.getElementById('form-' + char.id);
+  return char.forms[sel ? +sel.value : 0];
+}
+
+function renderGrid() {
+  grid.innerHTML = '';
+  for (const c of CHARACTERS) {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.id = 'card-' + c.id;
+    card.innerHTML = `
+      <span class="badge"></span>
+      <div class="avatar" style="background:${c.color}">${c.emoji}</div>
+      <h3>${c.name}</h3>
+      <div class="race">${c.race}</div>
+      <select id="form-${c.id}" title="Transformación de ${c.name}">
+        ${c.forms.map((f, i) => `<option value="${i}">${f.name}</option>`).join('')}
+      </select>
+      <div class="power-tag" id="power-${c.id}">Poder: ${formatPower(c.forms[0].power)}</div>
+    `;
+    card.addEventListener('click', e => {
+      if (e.target.tagName === 'SELECT' || e.target.tagName === 'OPTION') return;
+      toggleSelect(c.id);
+    });
+    card.querySelector('select').addEventListener('change', () => {
+      document.getElementById('power-' + c.id).textContent =
+        'Poder: ' + formatPower(getForm(c).power);
+    });
+    grid.appendChild(card);
+  }
+}
+
+function toggleSelect(id) {
+  const idx = state.selection.indexOf(id);
+  if (idx >= 0) {
+    state.selection.splice(idx, 1);
+  } else {
+    if (state.selection.length === 2) state.selection.shift();
+    state.selection.push(id);
+  }
+  updateSelectionUI();
+}
+
+function updateSelectionUI() {
+  for (const c of CHARACTERS) {
+    const card = document.getElementById('card-' + c.id);
+    card.classList.remove('selected-1', 'selected-2');
+    const pos = state.selection.indexOf(c.id);
+    if (pos >= 0) {
+      card.classList.add('selected-' + (pos + 1));
+      card.querySelector('.badge').textContent = 'Luchador ' + (pos + 1);
+    }
+  }
+  fightBtn.disabled = state.selection.length !== 2;
+  const n = state.selection.length;
+  instructions.innerHTML = n === 0
+    ? 'Selecciona <strong>2 personajes</strong> haciendo clic en sus tarjetas'
+    : n === 1
+      ? 'Has elegido 1 — selecciona <strong>1 personaje más</strong>'
+      : '¡Listo! Ajusta las transformaciones si quieres y pulsa <strong>¡LUCHAR!</strong>';
+}
+
+function fight() {
+  const [c1, c2] = state.selection.map(id => CHARACTERS.find(c => c.id === id));
+  const f1 = getForm(c1), f2 = getForm(c2);
+
+  const winner = f1.power === f2.power ? null : (f1.power > f2.power ? 1 : 2);
+  const wChar = winner === 1 ? c1 : c2;
+  const wForm = winner === 1 ? f1 : f2;
+  const ratio = Math.max(f1.power, f2.power) / Math.min(f1.power, f2.power);
+
+  document.getElementById('versus').innerHTML = `
+    <div class="fighter ${winner === 1 ? 'winner' : ''}">
+      <div class="avatar" style="background:${c1.color}">${c1.emoji}</div>
+      <h3>${c1.name}</h3>
+      <div class="form-name">${f1.name}</div>
+    </div>
+    <div class="vs-label">VS</div>
+    <div class="fighter ${winner === 2 ? 'winner' : ''}">
+      <div class="avatar" style="background:${c2.color}">${c2.emoji}</div>
+      <h3>${c2.name}</h3>
+      <div class="form-name">${f2.name}</div>
+    </div>
+  `;
+
+  let verdictText, subText;
+  if (!winner) {
+    verdictText = '¡Empate técnico!';
+    subText = 'Ambos guerreros tienen exactamente el mismo nivel de poder. ¡La batalla sería legendaria!';
+  } else {
+    verdictText = `🏆 <span class="name">${wChar.name}</span> es más fuerte`;
+    const r = ratio.toLocaleString('es-ES', { maximumFractionDigits: ratio >= 10 ? 0 : 1 });
+    subText = ratio >= 100
+      ? `Con ${wForm.name}, su poder es unas ${formatPower(Math.round(ratio))} veces superior. No sería ni una pelea…`
+      : ratio >= 5
+        ? `Con ${wForm.name}, es unas ${r} veces más poderoso. Victoria clara.`
+        : `Con ${wForm.name}, es unas ${r} veces más poderoso. ¡Sería un combate muy reñido!`;
+  }
+  document.getElementById('verdict').innerHTML = verdictText;
+  document.getElementById('verdictSub').textContent = subText;
+
+  const max = Math.max(f1.power, f2.power);
+  // Escala logarítmica para que la barra del débil sea visible
+  const pct = p => Math.max(4, (Math.log10(p) / Math.log10(max)) * 100);
+  document.getElementById('bars').innerHTML = `
+    <div class="bar-row">
+      <div class="bar-label"><strong>${c1.name} · ${f1.name}</strong><span>${formatPower(f1.power)}</span></div>
+      <div class="bar-track"><div class="bar-fill f1" data-w="${pct(f1.power)}"></div></div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label"><strong>${c2.name} · ${f2.name}</strong><span>${formatPower(f2.power)}</span></div>
+      <div class="bar-track"><div class="bar-fill f2" data-w="${pct(f2.power)}"></div></div>
+    </div>
+  `;
+
+  overlay.classList.add('open');
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      document.querySelectorAll('.bar-fill').forEach(el => {
+        el.style.width = el.dataset.w + '%';
+      });
+    });
+  });
+}
+
+fightBtn.addEventListener('click', fight);
+resetBtn.addEventListener('click', () => {
+  state.selection = [];
+  updateSelectionUI();
+  for (const c of CHARACTERS) {
+    const sel = document.getElementById('form-' + c.id);
+    sel.value = '0';
+    document.getElementById('power-' + c.id).textContent =
+      'Poder: ' + formatPower(c.forms[0].power);
+  }
+});
+closeBtn.addEventListener('click', () => overlay.classList.remove('open'));
+overlay.addEventListener('click', e => {
+  if (e.target === overlay) overlay.classList.remove('open');
+});
+
+renderGrid();
+updateSelectionUI();
+</script>
+</body>
+</html>
