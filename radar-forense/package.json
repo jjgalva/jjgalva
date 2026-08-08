@@ -1,0 +1,33 @@
+{
+  "name": "radar-forense",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Radar Forense — Plataforma de análisis forense de campañas en redes sociales (AppLab)",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "mock:generate": "node scripts/generate-mock.mjs"
+  },
+  "dependencies": {
+    "@react-pdf/renderer": "^3.4.4",
+    "better-sqlite3": "^11.3.0",
+    "jszip": "^3.10.1",
+    "next": "^14.2.15",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-force-graph-2d": "^1.25.5",
+    "recharts": "^2.12.7"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.11",
+    "@types/node": "^20.14.0",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.4",
+    "typescript": "^5.5.3"
+  }
+}
